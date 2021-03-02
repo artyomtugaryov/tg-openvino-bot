@@ -37,6 +37,21 @@ class InferenceService(metaclass=SingletonMetaClass):
         return InferenceResult(result)
 
 
-class HorseInferenceService(InferenceService):
+class ZebraInferenceService(InferenceService):
     def __init__(self):
         super().__init__(os.path.join(MODELS_PATH, '2zebra', 'horse2zebra.xml'))
+
+
+class HorseInferenceService(InferenceService):
+    def __init__(self):
+        super().__init__(os.path.join(MODELS_PATH, '2horse', 'zebra2horse.xml'))
+
+
+class OrangeInferenceService(InferenceService):
+    def __init__(self):
+        super().__init__(os.path.join(MODELS_PATH, '2orange', 'apple2orange.xml'))
+
+
+class AppleInferenceService(InferenceService):
+    def __init__(self):
+        super().__init__(os.path.join(MODELS_PATH, '2apple', 'orange2apple.xml'))

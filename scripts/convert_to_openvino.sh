@@ -28,5 +28,8 @@ python3 ${INSTALLDIR}/deployment_tools/model_optimizer/mo.py --input_model ${MOD
                                                              --input_shape [1,256,256,3] \
                                                              --output Squeeze \
                                                              --output_dir ${OUTPUT_PATH} \
-                                                             --input "0:G_7/c7s1_32/MirrorPad" \
+                                                             --input "0:F_7/c7s1_32/MirrorPad" \
                                                              --reverse_input_channels
+
+
+# for horse2zebra and orange2apple --input "0:G_7/c7s1_32/MirrorPad" \
