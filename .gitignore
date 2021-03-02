@@ -1,0 +1,14 @@
+# python specific
+__pycache__
+*.pyc
+
+# python virtual environment and IDEA specific
+.venv/
+venv/
+.env/
+env/
+.vscode/
+.idea/
+
+# folder with data
+data/
