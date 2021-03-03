@@ -1,12 +1,14 @@
 import os
+from typing import List
 
 import cv2
 import numpy as np
 from openvino.inference_engine import IECore
 
 from app.constants import MODELS_PATH
-from app.inference.input_data import InputData
+# from app.inference.input_data import GenderTransformerInputData as InputData
 from app.inference.inference_result import InferenceResult
+from app.inference.schema.input_info import SingleInputInfo, InputType, InputInfo
 
 
 class SingletonMetaClass(type):
@@ -21,37 +23,60 @@ class SingletonMetaClass(type):
 class InferenceService(metaclass=SingletonMetaClass):
     ie_core = IECore()
 
-    def __init__(self, network_path: str):
-        network = self.ie_core.read_network(model=network_path)
+    def __init__(self, device: str = 'CPU'):
+        self._network = self.ie_core.read_network(model=self.network_path)
+        self._execution_network = self.ie_core.load_network(network=self._network,
+                                                            device_name=device)
+        self._input_data = None
+        self._input_info = self._define_input_info()
+        self._output_blob = next(iter(self._network.outputs))
 
-        self.input_blob = next(iter(network.input_info))
-        self.input_shape = network.input_info[self.input_blob].input_data.shape
-        self.output_blob = next(iter(network.outputs))
-
-        self.execution_network = self.ie_core.load_network(network=network, device_name='CPU')
-
-    def infer(self, data: InputData) -> InferenceResult:
-        input_data = data.prepare(self.input_shape)
-        results = self.execution_network.infer(inputs={self.input_blob: input_data})
-        result = results[self.output_blob]
+    def infer(self) -> InferenceResult:
+        results = self._execution_network.infer(inputs=self.input_data)
+        result = results[self._output_blob]
         return InferenceResult(result)
 
+    def _define_input_info(self) -> InputInfo:
+        raise NotImplementedError
 
-class ZebraInferenceService(InferenceService):
-    def __init__(self):
-        super().__init__(os.path.join(MODELS_PATH, '2zebra', 'horse2zebra.xml'))
+    @property
+    def network_path(self) -> str:
+        raise NotImplementedError
+
+    @property
+    def input_data(self) -> dict:
+        return self._input_data
+
+    @input_data.setter
+    def input_data(self, input_data: dict):
+        self._input_data = input_data
+
+    @property
+    def input_info(self) -> InputInfo:
+        return self._input_info
 
 
-class HorseInferenceService(InferenceService):
-    def __init__(self):
-        super().__init__(os.path.join(MODELS_PATH, '2horse', 'zebra2horse.xml'))
+class GenderInferenceService(InferenceService):
 
+    def _define_input_info(self) -> InputInfo:
+        inputs = InputInfo()
+        for input_blob_name, input_info_data in self._network.input_info.items():
 
-class OrangeInferenceService(InferenceService):
-    def __init__(self):
-        super().__init__(os.path.join(MODELS_PATH, '2orange', 'apple2orange.xml'))
+            input_shape = self._network.input_info[input_blob_name].input_data.shape
+            input_type = None
 
+            if input_info_data.layout == 'NCHW':
+                input_type = InputType.image
+            elif input_info_data.layout == 'NC':
+                input_type = InputType.labels
 
-class AppleInferenceService(InferenceService):
-    def __init__(self):
-        super().__init__(os.path.join(MODELS_PATH, '2apple', 'orange2apple.xml'))
+            inputs.add_input(
+                input_type=input_type,
+                single_input_info=SingleInputInfo(name=input_blob_name,
+                                                  shape=input_shape)
+            )
+        return inputs
+
+    @property
+    def network_path(self) -> str:
+        return os.path.join(MODELS_PATH, 'gender', 'gender_transformer.xml')
