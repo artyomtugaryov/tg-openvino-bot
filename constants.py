@@ -1,6 +1,6 @@
 import os
 
-ROOT_PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+ROOT_PROJECT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 DEFAULT_DATA_PATH = os.path.join(ROOT_PROJECT_PATH, 'data')
 

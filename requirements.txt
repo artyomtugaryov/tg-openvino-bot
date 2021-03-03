@@ -5,3 +5,5 @@ flask-accepts
 numpy
 opencv-python
 image
+python-telegram-bot
+
