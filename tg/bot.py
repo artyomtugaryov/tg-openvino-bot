@@ -3,8 +3,12 @@ from enum import Enum
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 
-from services.inference.input_data.reader import TGInputDataReader
-from services.inference.service import GenderInferenceService
+from services.inference.data_processor import DataProcessPipeline
+from services.inference.gender.data import CompoundInputData
+from services.inference.gender.data_processor import ImageResizePreProcessor, ImageBGRToRGBPreProcessor, \
+    ImageHWCToCHWPreProcessor, ExpandShapePreProcessor, GenderPostProcessor
+from services.inference.gender.engine import GenderEngine
+from tg.data_reader import TelegramImageReader, TelegramFlagsReader
 
 token = '1641535882:AAFlqkjNQ74mpEPPSCpCdUV0U8UHUV5_Jv0'
 
@@ -22,10 +26,9 @@ class States(Enum):
 
 
 def start(update, context):
-    print(1)
     if not context.user_data.get(States.start_over.value):
         update.message.reply_text(
-            'Hi, I\'m OpenVINO Bot and I can magik. Just send me photo!')
+            'Hi, I\'m OpenVINO Bot and I can do a magik. Just send me photo!')
 
     context.user_data[States.start_over.value] = False
     return States.sending_photo.value
@@ -39,10 +42,22 @@ def stop(update, context):
 
 
 def get_image(update, context):
-    infer_result = TGInputDataReader(context, update.message.photo[-1].file_id).read()\
-        .using(GenderInferenceService).infer().prepare_to_send()
+    file_id = update.message.photo[-1].file_id
+    image_data = TelegramImageReader(source=context, file_id=file_id).read()
+    flags_data = TelegramFlagsReader(source=context, file_id=file_id).read()
 
-    context.bot.send_photo(chat_id=update.effective_chat.id, photo=infer_result)
+    processed_image_data = DataProcessPipeline([ImageResizePreProcessor,
+                                                ImageBGRToRGBPreProcessor,
+                                                ImageHWCToCHWPreProcessor,
+                                                ExpandShapePreProcessor]).run(image_data)
+
+    processed_flags_data = DataProcessPipeline([ExpandShapePreProcessor]).run(flags_data)
+
+    full_data = CompoundInputData(image_data=processed_image_data,
+                                  flags_data=processed_flags_data)
+    inference_result = GenderEngine().infer(full_data)
+    processed_results = GenderPostProcessor(inference_result).process()
+    context.bot.send_photo(chat_id=update.effective_chat.id, photo=processed_results.to_file_object())
 
 
 def main():
