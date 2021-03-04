@@ -19,7 +19,7 @@ class TelegramImageReader(IReader):
 
 
 class TelegramFlagsReader(IReader):
-    def __init__(self, source, file_id):
+    def __init__(self, source, file_id: int):
         super().__init__(source)
         self._file_id = file_id
 

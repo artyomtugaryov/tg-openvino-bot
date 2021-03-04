@@ -6,7 +6,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Conve
 from services.inference.data_processor import DataProcessPipeline
 from services.inference.gender.data import CompoundInputData
 from services.inference.gender.data_processor import ImageResizePreProcessor, ImageBGRToRGBPreProcessor, \
-    ImageHWCToCHWPreProcessor, ExpandShapePreProcessor, GenderPostProcessor
+    ImageHWCToCHWPreProcessor, ExpandShapePreProcessor, GenderPostProcessor, ImageNormalizePreProcessor
 from services.inference.gender.engine import GenderEngine
 from tg.data_reader import TelegramImageReader, TelegramFlagsReader
 
@@ -41,22 +41,25 @@ def stop(update, context):
     return States.end
 
 
-def get_image(update, context):
+def process_image(update, context):
     file_id = update.message.photo[-1].file_id
     image_data = TelegramImageReader(source=context, file_id=file_id).read()
     flags_data = TelegramFlagsReader(source=context, file_id=file_id).read()
 
-    processed_image_data = DataProcessPipeline([ImageResizePreProcessor,
-                                                ImageBGRToRGBPreProcessor,
-                                                ImageHWCToCHWPreProcessor,
-                                                ExpandShapePreProcessor]).run(image_data)
-
-    processed_flags_data = DataProcessPipeline([ExpandShapePreProcessor]).run(flags_data)
+    processed_image_data = DataProcessPipeline([ImageResizePreProcessor(),
+                                                ImageBGRToRGBPreProcessor(),
+                                                ImageHWCToCHWPreProcessor(),
+                                                ImageNormalizePreProcessor(),
+                                                ExpandShapePreProcessor()
+                                                ]).run(image_data)
+    processed_flags_data = DataProcessPipeline([ExpandShapePreProcessor()]).run(flags_data)
 
     full_data = CompoundInputData(image_data=processed_image_data,
                                   flags_data=processed_flags_data)
     inference_result = GenderEngine().infer(full_data)
-    processed_results = GenderPostProcessor(inference_result).process()
+    processed_results = DataProcessPipeline([GenderPostProcessor(),
+                                             ImageResizePreProcessor(512)
+                                             ]).run(inference_result)
     context.bot.send_photo(chat_id=update.effective_chat.id, photo=processed_results.to_file_object())
 
 
@@ -69,7 +72,7 @@ def main():
         entry_points=[CommandHandler('start', start)],
 
         states={
-            States.sending_photo.value: [MessageHandler(Filters.photo, get_image)],
+            States.sending_photo.value: [MessageHandler(Filters.photo, process_image)],
         },
 
         fallbacks=[CommandHandler('stop', stop)],
