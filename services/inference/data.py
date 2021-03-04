@@ -1,8 +1,8 @@
 import io
 
-from PIL import Image
-import numpy as np
 import cv2
+import numpy as np
+
 
 class Data:
     """
@@ -28,15 +28,16 @@ class Data:
         Create file like object from data
         :return: file-like object contains data
         """
-        img = Image.fromarray(self._as_uint8_array)
+        is_success, buffer = cv2.imencode('.bmp', self.data)
 
         # create file-object in memory
-        file_object = io.BytesIO()
+        buffer_storage = io.BytesIO(buffer)
 
-        # write PNG in file-object
-        img.save(file_object, 'PNG')
+        cv2.imdecode(np.frombuffer(buffer_storage.getbuffer(), np.uint8), -1)
+        return buffer_storage
 
-        # move to beginning of file so `send_file()` it will read from start
-        file_object.seek(0)
 
-        return file_object
+class ImageData(Data):
+    @property
+    def shape(self) -> np.ndarray:
+        return self.data.shape

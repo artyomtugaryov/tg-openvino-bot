@@ -1,16 +1,16 @@
 import logging
+import os
 from enum import Enum
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 
-from services.inference.data_processor import DataProcessPipeline
-from services.inference.gender.data import CompoundInputData
-from services.inference.gender.data_processor import ImageResizePreProcessor, ImageBGRToRGBPreProcessor, \
-    ImageHWCToCHWPreProcessor, ExpandShapePreProcessor, GenderPostProcessor, ImageNormalizePreProcessor
-from services.inference.gender.engine import GenderEngine
+from services.inference import DataProcessPipeline, ImageData, Data
+from services.inference.gender import (CompoundInputData, ImageResizePreProcessor, ImageBGRToRGBPreProcessor,
+                                       ImageHWCToCHWPreProcessor, ExpandShapePreProcessor, GenderPostProcessor,
+                                       ImageNormalizePreProcessor, GenderEngine)
 from tg.data_reader import TelegramImageReader, TelegramFlagsReader
 
-token = '1641535882:AAFlqkjNQ74mpEPPSCpCdUV0U8UHUV5_Jv0'
+token = os.environ.get('TELEGRAM_TOKEN')
 
 # Enable logging
 logging.basicConfig(
@@ -28,7 +28,7 @@ class States(Enum):
 def start(update, context):
     if not context.user_data.get(States.start_over.value):
         update.message.reply_text(
-            'Hi, I\'m OpenVINO Bot and I can do a magik. Just send me photo!')
+            'Hi, I am OpenVINO Bot and I can do magic. Just send me a photo!')
 
     context.user_data[States.start_over.value] = False
     return States.sending_photo.value
@@ -58,7 +58,8 @@ def process_image(update, context):
                                   flags_data=processed_flags_data)
     inference_result = GenderEngine().infer(full_data)
     processed_results = DataProcessPipeline([GenderPostProcessor(),
-                                             ImageResizePreProcessor(512)
+                                             ImageResizePreProcessor(512),
+                                             ImageBGRToRGBPreProcessor()
                                              ]).run(inference_result)
     context.bot.send_photo(chat_id=update.effective_chat.id, photo=processed_results.to_file_object())
 

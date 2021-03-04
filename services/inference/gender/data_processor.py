@@ -1,9 +1,7 @@
 import cv2
 import numpy as np
 
-from services.inference.data import Data
-from services.inference.data_processor import IDataProcessor
-from services.inference.gender.data import InputImageData
+from services.inference import Data, IDataProcessor, ImageData
 
 
 class ImageResizePreProcessor(IDataProcessor):
@@ -11,7 +9,7 @@ class ImageResizePreProcessor(IDataProcessor):
     def __init__(self, height: int = 300):
         self._height = height
 
-    def process(self, data: Data) -> InputImageData:
+    def process(self, data: Data) -> ImageData:
         data = data.data
 
         # initialize the dimensions of the image to be resized and
@@ -27,25 +25,29 @@ class ImageResizePreProcessor(IDataProcessor):
         resized = cv2.resize(data, dim, interpolation=cv2.INTER_AREA)
 
         # return the resized image
-        result = InputImageData(resized)
+        result = ImageData(resized)
         return result
 
 
 class ImageBGRToRGBPreProcessor(IDataProcessor):
 
-    def process(self, data: Data) -> InputImageData:
+    def process(self, data: Data) -> ImageData:
         data = data.data
         rgb_data = data[:, :, ::-1].copy()
-        result = InputImageData(rgb_data)
+        result = ImageData(rgb_data)
         return result
+
+
+class ImageRGBToBGRPreProcessor(ImageBGRToRGBPreProcessor):
+    pass
 
 
 class ImageHWCToCHWPreProcessor(IDataProcessor):
 
-    def process(self, data: Data) -> InputImageData:
+    def process(self, data: Data) -> ImageData:
         data = data.data
         transposed_data = data.transpose((2, 0, 1))
-        result = InputImageData(transposed_data)
+        result = ImageData(transposed_data)
         return result
 
 
@@ -58,13 +60,13 @@ class ImageNormalizePreProcessor(IDataProcessor):
         self._mean = mean
         self._std = std
 
-    def process(self, data: Data) -> InputImageData:
+    def process(self, data: Data) -> ImageData:
         data = data.data
 
         normalized_image = data / data.max()
         for channel in range(normalized_image.shape[0]):
             normalized_image[channel] = (normalized_image[channel] - self._mean[channel]) / self._std[channel]
-        result = InputImageData(normalized_image)
+        result = ImageData(normalized_image)
         return result
 
 

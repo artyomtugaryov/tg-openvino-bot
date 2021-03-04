@@ -2,13 +2,7 @@ from typing import Dict
 
 import numpy as np
 
-from services.inference.data import Data
-
-
-class InputImageData(Data):
-    @property
-    def shape(self) -> np.ndarray:
-        return self._data.shape
+from services.inference import Data, ImageData
 
 
 class InputFlagsData(Data):
@@ -16,7 +10,7 @@ class InputFlagsData(Data):
 
 
 class CompoundInputData(Data):
-    def __init__(self, image_data: InputImageData, flags_data: InputFlagsData):
+    def __init__(self, image_data: ImageData, flags_data: InputFlagsData):
         super(CompoundInputData, self).__init__({
             'image': image_data,
             'flags': flags_data,

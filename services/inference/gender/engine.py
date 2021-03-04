@@ -4,8 +4,7 @@ from typing import Dict
 import numpy as np
 
 from constants import MODELS_PATH
-from services.inference.data import Data
-from services.inference.engine import IEngine
+from services.inference import Data, IEngine
 from services.inference.gender.data import CompoundInputData
 
 
