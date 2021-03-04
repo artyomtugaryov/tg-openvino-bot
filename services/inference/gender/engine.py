@@ -1,20 +1,20 @@
 import os
-from typing import Dict
+from typing import Dict, Generic
 
 import numpy as np
 
 from constants import MODELS_PATH
 from services.inference import Data, IEngine
-from services.inference.gender.data import CompoundInputData
+from services.inference.gender.data import GenderInputData
+from services.inference.gender.input_schema import GenderInputInfo
 
 
 class GenderEngine(IEngine):
+    input_info_class = GenderInputInfo
 
-    def infer(self, data: CompoundInputData) -> Data:
-        shapes = self.combine(self.input_schema(), data.shape)
-        self._reshape_network(shapes)
-        data = self.combine(self.input_schema(), data.to_infer)
-        raw_inference_result = self._raw_inference(data)
+    def infer(self, data: GenderInputData) -> Data:
+        self._reshape_network(data.shape)
+        raw_inference_result = self._raw_inference(data.to_infer)
         return Data(raw_inference_result)
 
     def _reshape_network(self, shapes: Dict[str, np.ndarray]):
@@ -24,23 +24,3 @@ class GenderEngine(IEngine):
     @property
     def network_path(self) -> str:
         return os.path.join(MODELS_PATH, 'gender', 'gender_transformer.xml')
-
-    def input_schema(self) -> Dict[str, str]:
-        inputs = {}
-        for input_blob_name, input_info_data in self._network.input_info.items():
-
-            if input_info_data.layout == 'NCHW':
-                inputs['image'] = input_blob_name
-            elif input_info_data.layout == 'NC':
-                inputs['flags'] = input_blob_name
-            else:
-                raise AssertionError('Unsupported type of input')
-
-        return inputs
-
-    @staticmethod
-    def combine(input_info, data):
-        return {
-            input_info[key]: value
-            for key, value in data.items()
-        }

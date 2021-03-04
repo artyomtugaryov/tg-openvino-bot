@@ -1,4 +1,5 @@
 import io
+from typing import Any
 
 import cv2
 import numpy as np
@@ -11,6 +12,10 @@ class Data:
 
     def __init__(self, data):
         self.data = data
+
+    @property
+    def shape(self) -> Any:
+        raise NotImplementedError
 
     @property
     def _as_uint8_array(self) -> np.ndarray:

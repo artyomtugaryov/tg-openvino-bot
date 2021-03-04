@@ -1,3 +1,5 @@
+from typing import Type
+
 import cv2
 import numpy as np
 
@@ -71,12 +73,16 @@ class ImageNormalizePreProcessor(IDataProcessor):
 
 
 class ExpandShapePreProcessor(IDataProcessor):
+    def __init__(self, to_class: Type[Data] = Data):
+        super().__init__()
+        self._to_class = to_class
+
     def process(self, data: Data) -> Data:
         data = data.data
         shape = data.shape
         expanded_data = np.ndarray(shape=(1, *shape))
         expanded_data[0] = data
-        return Data(expanded_data)
+        return self._to_class(expanded_data)
 
 
 class GenderPostProcessor(IDataProcessor):
