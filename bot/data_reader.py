@@ -18,9 +18,6 @@ class TelegramImageReader(IReader):
 
 
 class TelegramFlagsReader(IReader):
-    def __init__(self, source, file_id: int):
-        super().__init__(source)
-        self._file_id = file_id
 
     def read(self) -> Data:
         return Data(np.array([0, 0, 1, 0, 1]))

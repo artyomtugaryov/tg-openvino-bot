@@ -8,7 +8,7 @@ from services.inference import DataProcessPipeline
 from services.inference.gender import (GenderInputData, ImageResizePreProcessor, ImageBGRToRGBPreProcessor,
                                        ImageHWCToCHWPreProcessor, ExpandShapePreProcessor, GenderPostProcessor,
                                        ImageNormalizePreProcessor, GenderEngine)
-from tg.data_reader import TelegramImageReader, TelegramFlagsReader
+from bot.data_reader import TelegramImageReader, TelegramFlagsReader
 
 token = os.environ.get('TELEGRAM_TOKEN')
 
@@ -27,8 +27,7 @@ class States(Enum):
 
 def start(update, context):
     if not context.user_data.get(States.start_over.value):
-        update.message.reply_text(
-            'Hi, I am OpenVINO Bot and I can do magic. Just send me a photo!')
+        update.message.reply_text('Hi, I am OpenVINO Bot and I can do magic. Just send me a photo!')
 
     context.user_data[States.start_over.value] = False
     return States.sending_photo.value
@@ -38,13 +37,13 @@ def stop(update, context):
     """End Conversation by command."""
     update.message.reply_text('Okay, bye.')
 
-    return States.end
+    return States.end.value
 
 
 def process_image(update, context):
     file_id = update.message.photo[-1].file_id
     image_data = TelegramImageReader(source=context, file_id=file_id).read()
-    flags_data = TelegramFlagsReader(source=context, file_id=file_id).read()
+    flags_data = TelegramFlagsReader(source=context).read()
 
     processed_image_data = DataProcessPipeline([ImageResizePreProcessor(),
                                                 ImageBGRToRGBPreProcessor(),
@@ -67,9 +66,6 @@ def process_image(update, context):
 
 
 def main():
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                        level=logging.INFO)
-
     updater = Updater(token=token, use_context=True)
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
