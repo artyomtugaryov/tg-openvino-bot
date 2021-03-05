@@ -1,4 +1,4 @@
-from services.inference.data import Data
+from services.inference.data import InputData
 
 
 class IReader:
@@ -8,7 +8,7 @@ class IReader:
     def __init__(self, source):
         self._source = source
 
-    def read(self) -> Data:
+    def read(self) -> InputData:
         """
         Read data from source and create Data
         :return:

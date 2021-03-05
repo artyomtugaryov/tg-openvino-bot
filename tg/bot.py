@@ -4,8 +4,8 @@ from enum import Enum
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 
-from services.inference import DataProcessPipeline, ImageData, Data
-from services.inference.gender import (CompoundInputData, ImageResizePreProcessor, ImageBGRToRGBPreProcessor,
+from services.inference import DataProcessPipeline
+from services.inference.gender import (GenderInputData, ImageResizePreProcessor, ImageBGRToRGBPreProcessor,
                                        ImageHWCToCHWPreProcessor, ExpandShapePreProcessor, GenderPostProcessor,
                                        ImageNormalizePreProcessor, GenderEngine)
 from tg.data_reader import TelegramImageReader, TelegramFlagsReader
@@ -54,9 +54,11 @@ def process_image(update, context):
                                                 ]).run(image_data)
     processed_flags_data = DataProcessPipeline([ExpandShapePreProcessor()]).run(flags_data)
 
-    full_data = CompoundInputData(image_data=processed_image_data,
-                                  flags_data=processed_flags_data)
+    full_data = GenderInputData(image_data=processed_image_data,
+                                flags_data=processed_flags_data)
+
     inference_result = GenderEngine().infer(full_data)
+
     processed_results = DataProcessPipeline([GenderPostProcessor(),
                                              ImageResizePreProcessor(512),
                                              ImageBGRToRGBPreProcessor()
