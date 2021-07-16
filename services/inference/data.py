@@ -1,4 +1,5 @@
 import io
+from enum import Enum
 from typing import Any, Dict
 
 import cv2
@@ -48,6 +49,7 @@ class InputData:
     """
     Class to manipulate of input data fro Engine
     """
+
     def __init__(self):
         self._data: Dict[InputType, Data] = {}
 
@@ -56,6 +58,32 @@ class InputData:
 
     @property
     def shape(self) -> Dict[InputType, np.ndarray]:
+        return {
+            input_type: data.shape
+            for input_type, data in self._data.items()
+        }
+
+    @property
+    def raw_data(self) -> Dict[InputType, np.ndarray]:
+        return {
+            input_type: data.data
+            for input_type, data in self._data.items()
+        }
+
+
+class InferenceResultData:
+    """
+    Class to manipulate of inference result data from Engine
+    """
+
+    def __init__(self, inference_results: Dict[str, np.ndarray]):
+        self._data: Dict[Enum, Data] = self._parse_output_data(inference_results)
+
+    def _parse_output_data(self, something) -> Dict[str, np.ndarray]:
+        raise NotImplementedError
+
+    @property
+    def shape(self) -> Dict[Enum, np.ndarray]:
         return {
             input_type: data.shape
             for input_type, data in self._data.items()

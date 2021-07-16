@@ -18,7 +18,13 @@ class IEngine:
         for output in self._network.outputs:
             self._output_blobs.add(output)
 
-        self._execution_network = None
+        self._execution_network = self._ie_core.load_network(self._network, 'CPU')
+
+    def input_shape(self) -> Dict:
+        return {
+            input_layer_type: self._network.input_info[input_layer_name].input_data.shape
+            for input_layer_type, input_layer_name in self._inputs.items()
+        }
 
     def _define_inputs(self) -> Dict[InputType, str]:
         return {

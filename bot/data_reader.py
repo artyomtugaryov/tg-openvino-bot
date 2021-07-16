@@ -15,9 +15,3 @@ class TelegramImageReader(IReader):
         data_as_np_array = np.frombuffer(file_as_bytearray, np.uint8)
         image_data = cv2.imdecode(data_as_np_array, cv2.IMREAD_COLOR)
         return Data(image_data)
-
-
-class TelegramFlagsReader(IReader):
-
-    def read(self) -> Data:
-        return Data(np.array([0, 0, 1, 0, 1]))

@@ -1,7 +1,3 @@
-Flask
-Flask-RESTful
-flask-restx
-flask-accepts
 numpy
 opencv-python
 image
